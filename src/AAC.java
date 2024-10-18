@@ -2,6 +2,9 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+
+import procedures.NullKeyException;
+
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
@@ -49,8 +52,8 @@ public class AAC implements ActionListener {
 	 *                 will be in the AAC
 	 */
 	public AAC(String filename) {
-		this.page = new AACCategory("test");
-		// this.page = new AACMappings(filename);
+		// this.page = new AACCategory("test");
+		this.page = new AACMappings(filename);
 		this.images = this.page.getImageLocs();
 		this.startIndex = 0;
 		this.endIndex = Math.min(NUM_ACROSS * NUM_DOWN, this.images.length);
@@ -197,7 +200,12 @@ public class AAC implements ActionListener {
 				String result = (String) JOptionPane.showInputDialog(frame, "What is the text?", "AAC Add",
 						JOptionPane.PLAIN_MESSAGE, null, null, "");
 				if (result != null && result.length() > 0) {
-					this.page.addItem(imageLoc, result);
+					try {
+						this.page.addItem(imageLoc, result);
+					} catch (NullKeyException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
 				}
 			}
 			this.images = this.page.getImageLocs();

@@ -1,5 +1,7 @@
 import java.util.NoSuchElementException;
 
+import procedures.NullKeyException;
+
 /**
  * This interface represents a set of information that would
  * be displayed together on an AAC. 
@@ -16,7 +18,7 @@ public interface AACPage {
 	 * @param imageLoc the location of the image
 	 * @param text the text that image should speak
 	 */
-	public void addItem(String imageLoc, String text);
+	public void addItem(String imageLoc, String text) throws NullKeyException;
 	
 	/**
 	 * Returns an array of all the images to be displayed on
@@ -53,6 +55,10 @@ public interface AACPage {
 	 * can be displayed, false otherwise
 	 */
 	public boolean hasImage(String imageLoc);
+
+
+
+	
 	
 	
 }

@@ -1,129 +1,268 @@
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.FileWriter;
+import java.io.PrintWriter;
+import java.util.NoSuchElementException;
+import procedures.KeyNotFoundException;
+import procedures.NullKeyException;
+import procedures.AssociativeArray;
+
 /**
- * Creates a set of mappings of an AAC that has two levels,
- * one for categories and then within each category, it has
- * images that have associated text to be spoken. This class
- * provides the methods for interacting with the categories
- * and updating the set of images that would be shown and handling
- * an interactions.
+ * This class holds mappings for an AAC, which are two-level mappings. First
+ * level is a category, and inside the
+ * category, we store images that have text descriptions to speak.
  * 
- * @author Catie Baker & YOUR NAME HERE
- *
+ * @author Catie Baker & Sunjae Kim
+ * 
  */
 public class AACMappings implements AACPage {
-	
-	/**
-	 * Creates a set of mappings for the AAC based on the provided
-	 * file. The file is read in to create categories and fill each
-	 * of the categories with initial items. The file is formatted as
-	 * the text location of the category followed by the text name of the
-	 * category and then one line per item in the category that starts with
-	 * > and then has the file name and text of that image
-	 * 
-	 * for instance:
-	 * img/food/plate.png food
-	 * >img/food/icons8-french-fries-96.png french fries
-	 * >img/food/icons8-watermelon-96.png watermelon
-	 * img/clothing/hanger.png clothing
-	 * >img/clothing/collaredshirt.png collared shirt
-	 * 
-	 * represents the file with two categories, food and clothing
-	 * and food has french fries and watermelon and clothing has a 
-	 * collared shirt
-	 * @param filename the name of the file that stores the mapping information
-	 */
-	public AACMappings(String filename) {
 
-	}
-	
-	/**
-	 * Given the image location selected, it determines the action to be
-	 * taken. This can be updating the information that should be displayed
-	 * or returning text to be spoken. If the image provided is a category, 
-	 * it updates the AAC's current category to be the category associated 
-	 * with that image and returns the empty string. If the AAC is currently
-	 * in a category and the image provided is in that category, it returns
-	 * the text to be spoken.
-	 * @param imageLoc the location where the image is stored
-	 * @return if there is text to be spoken, it returns that information, otherwise
-	 * it returns the empty string
-	 * @throws NoSuchElementException if the image provided is not in the current 
-	 * category
-	 */
-	public String select(String imageLoc) {
-		return null;
-	}
-	
-	/**
-	 * Provides an array of all the images in the current category
-	 * @return the array of images in the current category; if there are no images,
-	 * it should return an empty array
-	 */
-	public String[] getImageLocs() {
-		return null;
-	}
-	
-	/**
-	 * Resets the current category of the AAC back to the default
-	 * category
-	 */
-	public void reset() {
+    private AssociativeArray<String, AACCategory> categoryList; // Stores all categories
+    private AssociativeArray<String, String> categoryNames; // Links a category to its name (e.g., "one" -> "fruit")
+    private String currentCategory; // Stores the current selected category
 
-	}
-	
-	
-	/**
-	 * Writes the ACC mappings stored to a file. The file is formatted as
-	 * the text location of the category followed by the text name of the
-	 * category and then one line per item in the category that starts with
-	 * > and then has the file name and text of that image
-	 * 
-	 * for instance:
-	 * img/food/plate.png food
-	 * >img/food/icons8-french-fries-96.png french fries
-	 * >img/food/icons8-watermelon-96.png watermelon
-	 * img/clothing/hanger.png clothing
-	 * >img/clothing/collaredshirt.png collared shirt
-	 * 
-	 * represents the file with two categories, food and clothing
-	 * and food has french fries and watermelon and clothing has a 
-	 * collared shirt
-	 * 
-	 * @param filename the name of the file to write the
-	 * AAC mapping to
-	 */
-	public void writeToFile(String filename) {
-		
-	}
-	
-	/**
-	 * Adds the mapping to the current category (or the default category if
-	 * that is the current category)
-	 * @param imageLoc the location of the image
-	 * @param text the text associated with the image
-	 */
-	public void addItem(String imageLoc, String text) {
-		
-	}
+    /**
+     * Creates an object that loads categories and images from a file.
+     * 
+     * @param filename the name of the file that has the mappings
+     */
+    public AACMappings(String filename) {
+        categoryList = new AssociativeArray<>(); // Initialize category list
+        categoryNames = new AssociativeArray<>(); // Initialize category name map
+        currentCategory = ""; // Start with no selected category
+        loadMappingsFromFile(filename); // Load from the file
+    }
 
+    /**
+     * Loads the categories and images from the file.
+     * 
+     * @param filename The file that has the category and image data
+     */
+    private void loadMappingsFromFile(String filename) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
+            String line;
+            String newCategoryName = null;
 
-	/**
-	 * Gets the name of the current category
-	 * @return returns the current category or the empty string if 
-	 * on the default category
-	 */
-	public String getCategory() {
-		return null;
-	}
+            // Read the file line by line
+            while ((line = reader.readLine()) != null) {
+                line = line.trim(); // Remove spaces at the start and end
 
+                if (!line.startsWith(">")) {
+                    // This is a new category
+                    String[] parts = line.split(" ", 2);
+                    if (parts.length == 2) {
+                        newCategoryName = parts[0]; // First part is the category name
+                        String userFacingName = parts[1]; // Second part is the label like "fruit"
+                        categoryNames.put(newCategoryName, userFacingName); // Save category name
 
-	/**
-	 * Determines if the provided image is in the set of images that
-	 * can be displayed and false otherwise
-	 * @param imageLoc the location of the category
-	 * @return true if it is in the set of images that
-	 * can be displayed, false otherwise
-	 */
-	public boolean hasImage(String imageLoc) {
-		return false;
-	}
+                        // If the category doesn't exist, add it
+                        if (!categoryList.hasKey(newCategoryName)) {
+                            categoryList.put(newCategoryName, new AACCategory(newCategoryName));
+                        }
+                    }
+                } else {
+                    // This is an item under the current category
+                    if (newCategoryName != null) {
+                        line = line.substring(1); // Remove the ">"
+                        String[] parts = line.split(" ", 2);
+                        if (parts.length == 2) {
+                            String imageLocation = parts[0]; // First part is image location
+                            String description = parts[1]; // Second part is the description
+                            categoryList.get(newCategoryName).addItem(imageLocation, description); // Add image to
+                                                                                                   // category
+                        }
+                    }
+                }
+            }
+        } catch (IOException | NullKeyException | KeyNotFoundException e) {
+            // Handle any error during loading
+            System.err.println("Error loading mappings: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Adds a new image and its text to the current category.
+     * 
+     * @param imageLocation The location of the image
+     * @param text          The text that should be spoken with the image
+     * @throws NullKeyException if there is no selected category
+     */
+    @Override
+    public void addItem(String imageLocation, String text) throws NullKeyException {
+        if (currentCategory == null || currentCategory.isEmpty()) {
+            // If no category is selected, set it to the image location
+            currentCategory = imageLocation;
+
+            // If the category doesn't exist, add it
+            if (!categoryList.hasKey(currentCategory)) {
+                categoryList.put(currentCategory, new AACCategory(currentCategory));
+            }
+            return;
+        }
+
+        try {
+            // Add the image to the selected category
+            AACCategory selectedCategory = categoryList.get(currentCategory);
+            selectedCategory.addItem(imageLocation, text);
+        } catch (KeyNotFoundException e) {
+            throw new NoSuchElementException("Category '" + currentCategory + "' does not exist.");
+        }
+    }
+
+    /**
+     * Get the name of the currently selected category.
+     * 
+     * @return The name of the current category
+     */
+    @Override
+    public String getCategory() {
+        try {
+            return categoryNames.get(currentCategory); // Get the display name for the category
+        } catch (KeyNotFoundException e) {
+            return ""; // If no category is found, return an empty string
+        }
+    }
+
+    /**
+     * Get all the images in the current category, or top-level categories if no
+     * category is selected.
+     * 
+     * @return an array of image locations or category names
+     */
+    public String[] getImageLocs() {
+        // If no category is selected, return the top-level categories
+        if (currentCategory == null || currentCategory.isEmpty()) {
+            return categoryList.keys(); // Get all the category names
+        }
+
+        AACCategory selectedCategory;
+        try {
+            selectedCategory = categoryList.get(currentCategory); // Get the current category
+        } catch (KeyNotFoundException e) {
+            return new String[] {}; // Return an empty array if no category is found
+        }
+
+        return selectedCategory.getImageLocs(); // Return the images in the current category
+    }
+
+    /**
+     * Reset the current category to none.
+     */
+    public void reset() {
+        currentCategory = ""; // Clear the current category
+    }
+
+    /**
+     * Choose a category or an image within a category.
+     * 
+     * @param imageLocation The location of the image or category to select
+     * @return If text is associated with the image, return it, otherwise return an
+     *         empty string
+     * @throws NoSuchElementException if the image or category is not found
+     */
+    public String select(String imageLocation) {
+        if (categoryList.size() == 0) {
+            throw new NoSuchElementException("No categories are available.");
+        }
+
+        try {
+            // Check if the selected location is a top-level category
+            if (categoryList.hasKey(imageLocation)) {
+                if (currentCategory.equals(imageLocation)) {
+                    throw new IllegalStateException("Category '" + imageLocation + "' is already selected.");
+                }
+                currentCategory = imageLocation; // Set as the current category
+                return ""; // No text when selecting a category
+            }
+
+            // If no category is selected, throw an error
+            if (currentCategory == null || currentCategory.isEmpty()) {
+                throw new NoSuchElementException("No category is currently selected.");
+            }
+
+            // Get the selected image within the category
+            AACCategory selectedCategory = categoryList.get(currentCategory);
+            if (selectedCategory.hasImage(imageLocation)) {
+                return selectedCategory.select(imageLocation); // Get the text for the image
+            } else {
+                throw new NoSuchElementException("Image location not found in category: " + imageLocation);
+            }
+
+        } catch (KeyNotFoundException e) {
+            throw new NoSuchElementException("Category '" + currentCategory + "' does not exist.");
+        }
+    }
+
+    /**
+     * Check if an image is in the current category.
+     * 
+     * @param imageLocation The location of the image
+     * @return true if the image exists, false otherwise
+     */
+    @Override
+    public boolean hasImage(String imageLocation) {
+        try {
+            if (categoryList.hasKey(currentCategory)) {
+                return categoryList.get(currentCategory).hasImage(imageLocation);
+            }
+        } catch (KeyNotFoundException e) {
+            System.err.println("Error: Category not found.");
+        }
+        return false;
+    }
+
+    /**
+     * Check if the given location is a category or not.
+     * 
+     * @param imageLocation The location of the image
+     * @return true if it's a category, false if it's not
+     */
+    public boolean isCategory(String imageLocation) {
+        return categoryList.hasKey(imageLocation);
+    }
+
+    /**
+     * Save the AAC mappings to a file.
+     * 
+     * @param filename The file to save the mappings to
+     */
+    public void writeToFile(String filename) {
+        try (FileWriter fileWriter = new FileWriter(filename);
+                PrintWriter printWriter = new PrintWriter(fileWriter)) {
+
+            // Iterate through each category in categoryList
+            for (int i = 0; i < categoryList.size(); i++) {
+                String categoryKey = categoryList.getKey(i); // Get the category key (e.g., "one")
+                String categoryName = categoryNames.get(categoryKey); // Get the user-friendly category name (e.g.,
+                                                                      // "fruit")
+
+                // Write the category line (e.g., "one fruit")
+                printWriter.println(categoryKey + " " + categoryName);
+
+                // Get the AACCategory object for this category
+                AACCategory category = categoryList.get(categoryKey);
+                String[] imageLocations = category.getImageLocs(); // Get all image locations within the category
+
+                // Write each image and its associated description (e.g., ">a apple")
+                for (String imageLocation : imageLocations) {
+                    String description = category.select(imageLocation); // Get the description for the image
+                    printWriter.println(">" + imageLocation + " " + description); // Write the image and description
+                }
+            }
+
+        } catch (IOException | KeyNotFoundException e) {
+            // Handle exceptions during writing
+            System.err.println("Error writing to file: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Get all the top-level categories.
+     * 
+     * @return an array of category names
+     */
+    public String[] getTopLevelCategories() {
+        return categoryList.keys();
+    }
 }

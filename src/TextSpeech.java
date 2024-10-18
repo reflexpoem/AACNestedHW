@@ -37,7 +37,7 @@ public class TextSpeech {
             // Speaks the given text
             // until the queue is empty.
             synthesizer.speakPlainText(
-                "GeeksforGeeks", null);
+                "I am so happy", null);
             synthesizer.waitEngineState(
                 Synthesizer.QUEUE_EMPTY);
   
